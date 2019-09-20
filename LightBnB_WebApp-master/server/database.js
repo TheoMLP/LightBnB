@@ -1,5 +1,7 @@
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
+const db = require('../db/index.js')
+
 const { Pool } = require('pg');
 
 const params = {
@@ -7,7 +9,7 @@ const params = {
   user: 'vagrant',
   password: '123',
   host: 'localhost',
-  database: 'lightbnb'
+  database: 'lightbnb',
 };
 
 const pool = new Pool(params);
@@ -27,16 +29,14 @@ const getUserWithEmail = function(email) {
   WHERE email = $1;`
   const values = [email];
 
-  return pool.query(queryString, values)
-      .then(res => {
-        if (res.rows[0]) {
-          return res.rows[0];
-        } else {
-          return null;
-        }
-      })
-      .catch(err => {console.log(err.stack)});
-}
+  return db.query(queryString, values, res => {
+    if (res.rows[0]) {
+      return res.rows[0];
+    } else {
+      return null;
+    }
+  });
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -51,16 +51,14 @@ const getUserWithId = function(id) {
   WHERE id = $1;`
   const values = [id];
 
-  return pool.query(queryString, values)
-     .then(res => {
-       if (res.rows[0]) {
-         return res.rows[0];
-       } else {
-         return null;
-       }
-     })
-     .catch(err => {console.log(err.stack)});
-}
+  return db.query(queryString, values, res => {
+    if (res.rows[0]) {
+      return res.rows[0];
+    } else {
+      return null;
+    }
+  });
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -76,14 +74,10 @@ const addUser =  function(user) {
   RETURNING *;`
   const values = [user.name, user.email, user.password]
 
-  return pool.query(queryString, values)
-    .then(newUser => {
-      return newUser;
-    })
-    .catch(err => {
-      console.log(err.stack);
-    });
-}
+  return db.query(queryString, values, newUser => {
+    return newUser;
+  });
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -105,10 +99,8 @@ const getAllReservations = function(guest_id, limit = 10) {
   LIMIT $2;`
   const values = [guest_id, limit]
 
-  return pool.query(queryString, values)
-     .then(res => res.rows)
-     .catch(err => {console.log(err.stack)});
-}
+  return db.query(queryString, values, res => res.rows);
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties\q
@@ -160,11 +152,7 @@ const getAllProperties = function(options, limit = 10) {
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};`;
 
-  return pool.query(queryString, queryParams)
-     .then(res => res.rows)
-     .catch(err => {
-       console.log(err.stack)
-     });
+  return db.query(queryString, queryParams, res => res.rows);
 }
 
 exports.getAllProperties = getAllProperties;
@@ -182,10 +170,6 @@ const addProperty = function(property) {
   RETURNING *;`
   const queryParams = [property.owner_id, property.title, property.description, property.thumbnail_photo_url, property.cover_photo_url, property.cost_per_night, property.parking_spaces, property.number_of_bathrooms, property.number_of_bedrooms, property.country, property.street, property.city, property.province, property.post_code] 
   
-  return pool.query(queryString, queryParams)
-     .then(res => res.rows[0])
-     .catch (err => {
-       console.log(err.stack)
-     });
-}
+  return db.query(queryString, queryParams, res => res.rows[0]);
+};
 exports.addProperty = addProperty;
